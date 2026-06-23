@@ -1,0 +1,10 @@
+name: japanese-ai
+channels:
+  - defaults
+dependencies:
+  - python=3.12
+  - uvicorn
+  - pydantic
+  - fastapi
+  - python-dotenv
+prefix: D:\AI\conda\envs\japanese-ai

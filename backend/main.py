@@ -6,16 +6,15 @@ app = FastAPI()
 
 @app.get("/")
 def read_root():
-    return_value = post_prompt({
-        "model": "qwen/qwen2.5-vl-7b",
-        "input": "Who are you?"
-    })
+    return {
+        "message": "This is the backend for LM Studio Demo\n", 
+            "link": "http://127.0.0.1:8000/docs"
+            }
 
-    return return_value
 
 @app.post("http://localhost:1234/api/v1/chat")
 def post_prompt(prompt):
     model = lms.llm("qwen/qwen2.5-vl-7b")
-    result = model.respond(prompt["input"])
+    result = model.respond(prompt)
 
     return result

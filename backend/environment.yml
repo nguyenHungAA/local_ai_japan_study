@@ -7,4 +7,5 @@ dependencies:
   - pydantic
   - fastapi
   - python-dotenv
+  - pymongo
 prefix: D:\AI\conda\envs\japanese-ai

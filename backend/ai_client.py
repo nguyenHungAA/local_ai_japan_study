@@ -1,4 +1,9 @@
+import json
+import logging
 from openai import OpenAI
+from collections.abc import Generator
+
+logger = logging.getLogger(__name__)
 
 def get_client():
     return OpenAI(
@@ -6,7 +11,7 @@ def get_client():
         api_key="lm-studio",
     )
 
-def prompt_local_ai(prompt):
+def generate_response(prompt: str) -> Generator[str, None, None]:
     client = get_client()
 
     response = client.chat.completions.create(
@@ -17,6 +22,18 @@ def prompt_local_ai(prompt):
                 "content": prompt,
             }
         ],
+        stream=True
     )
 
-    return response.choices[0].message.content
+    logger.info(response)
+
+    for chunk in response: 
+        if not chunk.choices:
+            continue
+        content = chunk.choices[0].delta.content
+
+        if content:
+            yield json.dumps({
+                "id": chunk.id,
+                "content": content,
+            }) + "\n"

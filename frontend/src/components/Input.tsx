@@ -10,15 +10,14 @@ const Input = ({ parentCallback, className }) => {
     }
 
     const handleSubmit = useCallback((e) => {
+        e.preventDefault();
         parentCallback(inputRef.current!.innerText);
         inputRef.current!.innerText = "";
-        handleInputPlaceholder();
-        e.preventDefault();
     }, [parentCallback]);
 
     useEffect(() => {
         handleInputPlaceholder();
-    }, []);
+    });
 
     useEffect(() => {
         const listener = event => {

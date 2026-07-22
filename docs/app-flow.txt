@@ -1,0 +1,39 @@
+Backend explaination:
+    Folder explaination:
+    - api/routes: contain routes entries for API endpoints
+    - app: main app entry, CORS and route handling
+    - config: app configuration, db configuration
+    - repositories: direct interacting with database
+    - schema: data schema design, ensure data integrity
+    - services: what should the backend do
+    for example: In chat_service.py, the backend check for conversationId in the request parameters, if no conversationId exists then it create a new one, else continue the conversation
+
+    Note: response are sent back to frontend as a JSON object
+    with type key and another key (
+        conversation_id: for conversation creation, continuation and on finish
+        
+        content: for streaming model's response
+        error: for error handling
+    ) 
+
+    create_message method called in chat_service.py also 
+    handles message udpates, sequence counting and conversation updates
+
+Frontend explanation:
+    How is the response chunk handled?
+
+    - After calling the backend and receiving a successful response, the frontend gets a reader from `response.body`.
+    - `response.body` is the HTTP response stream. The reader reads raw byte chunks from that stream.
+    - Each byte chunk is decoded into text with `TextDecoder`.
+    - A `buffer` variable stores decoded text because one network chunk may contain a partial JSON line, one complete JSON line, or multiple JSON lines.
+    - The buffer is split by newline (`\n`) because the backend sends each stream event as one JSON line.
+    - `buffer = lines.pop() ?? ""` keeps the last split item, which may be an incomplete JSON line. This leaves `lines` containing only complete JSON lines.
+    - For every complete line, the frontend parses it into a `ChatStreamEvent`.
+    - If the event type is `conversation` or `done`, the conversation ID is updated.
+    - If the event type is `error`, the error is logged.
+    - Otherwise, it is a token/chunk event. Its content is appended to `fullResponse`.
+    - `setConversation` updates the assistant message with the latest `fullResponse`, creating the streaming effect in the UI.
+
+    Why do we need a clientId in the frontend? 
+    
+

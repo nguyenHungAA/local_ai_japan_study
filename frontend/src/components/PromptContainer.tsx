@@ -1,4 +1,9 @@
-const ConversationContainer = ({ userPrompt, modelResponse }) => {
+type ConversationContainerProps = {
+    userPrompt: string[];
+    modelResponse: string[];
+};
+
+const ConversationContainer = ({ userPrompt, modelResponse }: ConversationContainerProps) => {
     return (
         <div className="conversation-container">
             {userPrompt.map((prompt, index) => (

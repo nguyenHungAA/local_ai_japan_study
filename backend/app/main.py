@@ -1,13 +1,11 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
 from contextlib import asynccontextmanager
-import services.chat_service as chat_service
-from schema.chat import ChatRequest
 import logging
-import config.database as database
-from api.routes.conversation import router as conversation_router
+import backend.config.database as database
+from backend.api.routes.chat import router as chat_router
+from backend.api.routes.conversation import router as conversation_router
 
 logging.basicConfig(level=logging.INFO)
 
@@ -21,6 +19,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+app.include_router(chat_router)
 app.include_router(conversation_router)
 
 app.add_middleware(

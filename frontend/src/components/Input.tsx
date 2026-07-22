@@ -1,18 +1,35 @@
 import { useCallback, useEffect, useRef } from "react";
+import type { FormEvent } from "react";
 
-const Input = ({ parentCallback, className }) => {
+type InputProps = {
+    parentCallback: (inputText: string) => void;
+    className?: string;
+};
+
+const Input = ({ parentCallback, className = "" }: InputProps) => {
     const inputRef = useRef<HTMLParagraphElement>(null);
 
     const handleInputPlaceholder = () => {
-        const element = inputRef.current!;
+        const element = inputRef.current;
+
+        if (!element) {
+            return;
+        }
+
         const isEmpty = element.innerText.trim() === "" && (element.innerHTML === "<br>" || element.innerHTML === "");
         element.classList.toggle("is-empty", isEmpty);
     }
 
-    const handleSubmit = useCallback((e) => {
+    const handleSubmit = useCallback((e: FormEvent | KeyboardEvent) => {
         e.preventDefault();
-        parentCallback(inputRef.current!.innerText);
-        inputRef.current!.innerText = "";
+        const element = inputRef.current;
+
+        if (!element) {
+            return;
+        }
+
+        parentCallback(element.innerText);
+        element.innerText = "";
     }, [parentCallback]);
 
     useEffect(() => {
@@ -20,8 +37,10 @@ const Input = ({ parentCallback, className }) => {
     });
 
     useEffect(() => {
-        const listener = event => {
-            if (inputRef.current.innerText && (event.code === "Enter" || event.code === "NumpadEnter")) {
+        const listener = (event: KeyboardEvent) => {
+            const element = inputRef.current;
+
+            if (element?.innerText && (event.code === "Enter" || event.code === "NumpadEnter")) {
                 event.preventDefault();
                 handleSubmit(event);
             }

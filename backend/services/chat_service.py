@@ -1,38 +1,59 @@
-import json
-import logging
-from openai import OpenAI
-from collections.abc import Generator
+import json 
 
-logger = logging.getLogger(__name__)
-
-def get_client():
-    return OpenAI(
-        base_url="http://localhost:1234/v1",
-        api_key="lm-studio",
-    )
-
-def generate_response(prompt: str) -> Generator[str, None, None]:
-    client = get_client()
-
-    response = client.chat.completions.create(
-        model="qwen2.5-vl-7b",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt,
-            }
-        ],
-        stream=True
-    )
+from backend.services.ai_service import generate_response
+from backend.repositories.conversation_repo import create_conversation, get_conversation
+from backend.repositories.message_repo import create_message
 
 
-    for chunk in response: 
-        if not chunk.choices:
-            continue
-        content = chunk.choices[0].delta.content
+def stream_chat_response(request):
+    try:
+        if request.conversation_id is None:
+            conversation_id = create_conversation(request.user_id)
+        else:
+            conversation_id = request.conversation_id
+            conversation = get_conversation(conversation_id)
 
-        if content:
+            if conversation is None:
+                raise ValueError("Conversation not found")
+
+        create_message(
+            conversation_id=conversation_id,
+            role="user",
+            content=request.prompt,
+        )
+
+        yield json.dumps({
+            "type": "conversation",
+            "conversation_id": conversation_id,
+        }) + "\n"
+
+        assistant_chunks = []
+
+        for chunk in generate_response(request.prompt):
+            data = json.loads(chunk)
+            content = data["content"]
+
+            assistant_chunks.append(content)
+
             yield json.dumps({
-                "id": chunk.id,
+                "type": "token",
                 "content": content,
             }) + "\n"
+
+        full_answer = "".join(assistant_chunks)
+
+        create_message(
+            conversation_id=conversation_id,
+            role="assistant",
+            content=full_answer,
+        )
+
+        yield json.dumps({
+            "type": "done",
+            "conversation_id": conversation_id,
+        }) + "\n"
+    except Exception as e:
+        yield json.dumps({
+            "type": "error",
+            "message": str(e),
+        }) + "\n"

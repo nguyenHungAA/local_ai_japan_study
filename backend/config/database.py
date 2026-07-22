@@ -1,14 +1,15 @@
 import dotenv
-from narwhals import Datetime
+from pathlib import Path
+
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
-from bson import ObjectId
 
 
+ENV_PATH = Path(__file__).resolve().parents[1] / ".env"
 
-dotenv.load_dotenv()
+dotenv.load_dotenv(ENV_PATH)
 
-uri = dotenv.get_key(dotenv.find_dotenv(), "MONGODB_URI")
+uri = dotenv.get_key(str(ENV_PATH), "MONGODB_URI")
 client = MongoClient(
     uri,
     server_api=ServerApi(version="1", strict=True, deprecation_errors=True),
@@ -34,4 +35,3 @@ def init_db():
 
 def close_db():
     client.close()
-

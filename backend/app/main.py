@@ -3,10 +3,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from contextlib import asynccontextmanager
-import ai_client
-from models import ChatRequest
+import services.chat_service as chat_service
+from schema.chat import ChatRequest
 import logging
-import database
+import config.database as database
+from api.routes.conversation import router as conversation_router
 
 logging.basicConfig(level=logging.INFO)
 
@@ -19,6 +20,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+app.include_router(conversation_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -33,14 +36,3 @@ def read_root():
     return {"message": "Hello World"}
 
 # run unset SSL_CERT_FILE before running this app
-@app.post('/')
-def read_root(request: ChatRequest):
-   try: 
-       return StreamingResponse(
-        ai_client.generate_response(request.prompt),
-        media_type="application/x-ndjson",
-       )
-   except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return {"error": str(e)}

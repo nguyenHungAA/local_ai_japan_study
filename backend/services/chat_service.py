@@ -25,7 +25,6 @@ def generate_response(prompt: str) -> Generator[str, None, None]:
         stream=True
     )
 
-    logger.info(response)
 
     for chunk in response: 
         if not chunk.choices:

@@ -10,9 +10,13 @@ ENV_PATH = Path(__file__).resolve().parents[1] / ".env"
 dotenv.load_dotenv(ENV_PATH)
 
 uri = dotenv.get_key(str(ENV_PATH), "MONGODB_URI")
+
+if uri is None:
+    raise ValueError("MONGODB_URI is not set in the .env file.")
+
 client = MongoClient(
     uri,
-    server_api=ServerApi(version="1", strict=True, deprecation_errors=True),
+    server_api=ServerApi('1'),
 )
 
 def get_db():

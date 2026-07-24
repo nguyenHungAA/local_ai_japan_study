@@ -43,6 +43,30 @@ def create_message(
         "updated_at": now,
     })
 
-    update_conversation_after_message(conversation_id)
+    update_conversation_after_message(conversation_id, content)
     return str(result.inserted_id)
+
+
+def get_messages_for_conversation(conversation_id: str):
+    db = get_db()
+    conversation_object_id = _to_object_id(conversation_id)
+
+    messages = db["messages"].find(
+        {"conversation_id": conversation_object_id},
+        sort=[("sequence", 1)],
+    )
+
+    return [
+        {
+            "_id": str(message["_id"]),
+            "conversation_id": str(message["conversation_id"]),
+            "clientId": message.get("client_id") or str(message["_id"]),
+            "responseId": message.get("response_id"),
+            "role": message["role"],
+            "content": message.get("content", ""),
+            "status": message.get("status"),
+            "sequence": message.get("sequence"),
+        }
+        for message in messages
+    ]
 

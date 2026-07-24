@@ -9,11 +9,16 @@ export async function createChatStream(request: Chat) {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(request),
+            body: JSON.stringify({
+                prompt: request.prompt,
+                user_id: request.userId,
+                conversation_id: request.conversationId,
+            }),
         });
 
         if (!response.ok) {
-            throw new Error('Network response was not ok');
+            const errorBody = await response.text();
+            throw new Error(`Network response was not ok (${response.status}): ${errorBody}`);
         }
 
         return response;

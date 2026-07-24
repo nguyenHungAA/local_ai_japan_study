@@ -8,5 +8,5 @@ export interface Conversation {
 export interface Chat {
     prompt: string;
     userId: string;
-    conversationId: string;
+    conversationId?: string;
 }

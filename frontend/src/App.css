@@ -10,7 +10,7 @@
 }
 
 .app-title-container {
-    margin-bottom: 100px;
+    margin-bottom: 80px;
 }
 
 .app-title {
@@ -37,14 +37,15 @@
     justify-content: space-between;
     padding-top: 12px;
     padding-left: 12px;
+
 }
 
 .sidebar-list {
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: 12px;
     padding-left: 0;
+    gap: 4px;
     margin-top: 18px;
 }
 
@@ -53,12 +54,35 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 0 0 0 12px;
+    padding: 4px 0;
     border-radius: 12px;
 }
 
-.sidebar-list-item>*:hover {
+.sidebar-list-item button>* {
+    padding-left: 12px;
+}
+
+.button-hover:hover {
     background: rgba(255, 255, 255, 0.15);
+    cursor: pointer;
+}
+
+
+.sidebar-history h3 {
+    text-align: left;
+    padding-left: 12px;
+}
+
+.sidebar-history ul {
+    list-style: none;
+    text-align: left;
+    padding-left: 0;
+    margin-top: 12px;
+}
+
+.sidebar-history-item {
+    padding: 4px 0 4px 12px;
+    border-radius: 12px;
 }
 
 /* Loading */

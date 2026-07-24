@@ -4,7 +4,8 @@ import Sidebar from './components/Sidebar'
 import Input from './components/Input'
 import type { Conversation } from './types/IConversation'
 import Loading from './components/loading/Loading';
-import { createChatStream } from './api/Chat';
+import { createChatStream } from './api/chat';
+import { getConversationMessages } from './api/conversation';
 
 const USER_ID_STORAGE_KEY = "local-ai-user-id";
 
@@ -29,8 +30,8 @@ function getUserId() {
 
 function App() {
   const [conversationHistoryVersion, setConversationHistoryVersion] = useState(0);
-  const [conversation, setConversation] = useState<Conversation[]>([]);
-  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Conversation[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -43,15 +44,37 @@ function App() {
       role: 'user',
       content: inputText
     };
-    setConversation(prev => [...prev, newMessage]);
+    setMessages(prev => [...prev, newMessage]);
     sendMessage(inputText);
+  }
+
+  async function loadConversation(conversationId: string) {
+
+    if (conversationId === "") {
+      setActiveConversationId(null);
+      setMessages([]);
+      return;
+    }
+
+    setActiveConversationId(conversationId);
+    setIsLoading(true);
+
+    try {
+      const conversationMessages = await getConversationMessages(conversationId);
+      setMessages(conversationMessages);
+    } catch (e) {
+      console.error('Error loading conversation: ' + e);
+      setMessages([]);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   async function sendMessage(prompt: string) {
     const clientId = crypto.randomUUID();
     let fullResponse = "";
 
-    setConversation(prev => [
+    setMessages(prev => [
       ...prev,
       { clientId: clientId, role: 'assistant', content: '' }
     ]);
@@ -61,8 +84,12 @@ function App() {
       const response = await createChatStream({
         prompt,
         userId: getUserId(),
-        conversationId: conversationId ?? undefined
+        conversationId: activeConversationId ?? undefined
       })
+
+      if (!response.body) {
+        throw new Error("Response body is empty");
+      }
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -87,12 +114,12 @@ function App() {
 
           const data = JSON.parse(line) as ChatStreamEvent;
 
-          if (data.type === "conversation" && !conversationId) {
+          if (data.type === "conversation" && !activeConversationId) {
             setConversationHistoryVersion(prev => prev + 1);
           }
 
           if (data.type === "conversation" || data.type === "done") {
-            setConversationId(data.conversation_id);
+            setActiveConversationId(data.conversation_id);
             continue;
           }
 
@@ -103,7 +130,7 @@ function App() {
 
           fullResponse += data.content;
 
-          setConversation(prev =>
+          setMessages(prev =>
             prev.map(msg => msg.clientId === clientId ? { ...msg, content: fullResponse } : msg)
           );
         }
@@ -113,7 +140,7 @@ function App() {
         const data = JSON.parse(buffer) as ChatStreamEvent;
 
         if (data.type === "done" || data.type === "conversation") {
-          setConversationId(data.conversation_id);
+          setActiveConversationId(data.conversation_id);
         }
       }
     } catch (e) {
@@ -127,16 +154,19 @@ function App() {
 
   return (
     <section id="root">
-      <Sidebar conversationHistoryVersion={conversationHistoryVersion} />
-      <section id="main" style={conversation.length > 0 ? { justifyContent: "flex-start" } : { justifyContent: "center" }}>
-        {!conversation.length && (
+      <Sidebar
+        parentCallback={loadConversation}
+        conversationHistoryVersion={conversationHistoryVersion}
+      />
+      <section id="main" style={messages.length > 0 ? { justifyContent: "flex-start" } : { justifyContent: "center" }}>
+        {!messages.length && (
           <div className='app-title-container'>
             <h1 className='app-title'>なにかごようでしょうか？</h1>
           </div>
         )}
         <div className="conversation-container">
-          {conversation.length > 0 && (
-            conversation.map((message) => (
+          {messages.length > 0 && (
+            messages.map((message) => (
               message.role === 'user' ? (
                 <div key={message.clientId} className='message-wrapper'>
                   {message.content}
@@ -154,7 +184,7 @@ function App() {
         </div>
         <Input
           parentCallback={handleInputSubmit}
-          className={conversation.length > 0 ? "has-prompt" : ""}
+          className={messages.length > 0 ? "has-prompt" : ""}
         />
       </section>
     </section>
